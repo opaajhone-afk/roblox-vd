@@ -1,0 +1,546 @@
+if _G.loading then return end
+_G.loading = true
+
+-- 基础服务
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TextChatService = game:GetService("TextChatService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StatsService = game:GetService("Stats")
+
+-- 欢迎脚本配置
+local WELCOME_DB_URL = "https://zmgyquxrwewbhwgidkjo.supabase.co/rest/v1/player_roles"
+local WELCOME_DB_KEY = "sb_publishable_x0N_UMWmYTclQH-yxWdjNA_z3HqtdYl"
+
+local welcomeMessages = {
+    author = "✨ 欢迎违Hub脚本作者违逆 {username} 加入游戏！",
+    helper = "🔧 欢迎违Hub脚本协助者 {username} 加入游戏！",
+    donator = "💎 欢迎违Hub赞助者 {username} 加入游戏！"
+}
+
+local playerRoles = {}
+local welcomeSent = {}
+local welcomeEnabled = true -- 默认启用欢迎功能
+
+-- 从数据库获取角色数据
+local function fetchPlayerRoles()
+    local request = {
+        Url = WELCOME_DB_URL,
+        Method = "GET",
+        Headers = {
+            ["apikey"] = WELCOME_DB_KEY,
+            ["Authorization"] = "Bearer " .. WELCOME_DB_KEY
+        }
+    }
+    
+    local success, response = pcall(function()
+        return HttpService:RequestAsync(request)
+    end)
+    
+    if success and response.StatusCode == 200 then
+        local data = HttpService:JSONDecode(response.Body)
+        playerRoles = {} -- 清空旧数据
+        for _, item in ipairs(data) do
+            if item.username and item.role then
+                playerRoles[item.username] = item.role
+            end
+        end
+        return true
+    end
+    return false
+end
+
+-- 发送欢迎消息
+local function sendWelcomeMessage(player)
+    -- 不欢迎自己
+    if player == LocalPlayer then return end
+    
+    if not player or welcomeSent[player.Name] then return end
+    if not welcomeEnabled then return end
+    
+    local role = playerRoles[player.Name]
+    if not role then return end
+    
+    local msgTemplate = welcomeMessages[role]
+    if not msgTemplate then return end
+    
+    local message = msgTemplate:gsub("{username}", player.Name)
+    
+    local success = pcall(function()
+        TextChatService.TextChannels.RBXGeneral:SendAsync(message)
+    end)
+    
+    if success then
+        welcomeSent[player.Name] = true
+    end
+    
+    return success
+end
+
+-- 通用消息发送函数
+local function sendSpecifiedMessage(message)
+    local success, err = pcall(function()
+        TextChatService.TextChannels.RBXGeneral:SendAsync(message)
+        return true
+    end)
+    
+    if not success then
+        success = pcall(function()
+            LocalPlayer.Chatted:Fire(message)
+            return true
+        )
+    end
+    
+    return success
+end
+
+-- 性能统计UI
+local performanceStatsUI = nil
+local renderSteppedConn = nil
+
+local function createPerformanceStats()
+    if performanceStatsUI then
+        performanceStatsUI:Destroy()
+    end
+    if renderSteppedConn then
+        renderSteppedConn:Disconnect()
+    end
+
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PerformanceStats"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = playerGui
+    
+    local dragFrame = Instance.new("Frame")
+    dragFrame.Name = "DragFrame"
+    dragFrame.Size = UDim2.new(0, 120, 0, 32)
+    dragFrame.Position = UDim2.new(1, -130, 0, 10)
+    dragFrame.BackgroundTransparency = 1
+    dragFrame.Active = true
+    dragFrame.Selectable = false
+    dragFrame.Parent = screenGui
+    
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Name = "FPSLabel"
+    fpsLabel.Size = UDim2.new(1, 0, 0, 16)
+    fpsLabel.Position = UDim2.new(0, 0, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.Text = "FPS: --"
+    fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    fpsLabel.TextSize = 14
+    fpsLabel.Font = Enum.Font.Code
+    fpsLabel.TextXAlignment = Enum.TextXAlignment.Right
+    fpsLabel.TextStrokeTransparency = 0.7
+    fpsLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    fpsLabel.Parent = dragFrame
+    
+    local pingLabel = Instance.new("TextLabel")
+    pingLabel.Name = "PingLabel"
+    pingLabel.Size = UDim2.new(1, 0, 0, 16)
+    pingLabel.Position = UDim2.new(0, 0, 0, 16)
+    pingLabel.BackgroundTransparency = 1
+    pingLabel.Text = "Ping: --"
+    pingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    pingLabel.TextSize = 14
+    pingLabel.Font = Enum.Font.Code
+    pingLabel.TextXAlignment = Enum.TextXAlignment.Right
+    pingLabel.TextStrokeTransparency = 0.7
+    pingLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    pingLabel.Parent = dragFrame
+    
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function updateInput(input)
+        local delta = input.Position - dragStart
+        dragFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+    
+    dragFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = dragFrame.Position
+            
+            dragFrame.BackgroundTransparency = 0.8
+            dragFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            dragFrame.BorderSizePixel = 1
+            dragFrame.BorderColor3 = Color3.fromRGB(100, 100, 100)
+            
+            local connection
+            connection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    dragFrame.BackgroundTransparency = 1
+                    dragFrame.BorderSizePixel = 0
+                    connection:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    dragFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            updateInput(input)
+        end
+    end)
+    
+    local function getNetworkStats()
+        local ping = 0
+        pcall(function()
+            local network = StatsService.Network
+            if network and network.ServerStatsItem then
+                local dataPing = network.ServerStatsItem["Data Ping"]
+                if dataPing then
+                    ping = math.floor(dataPing:GetValue())
+                end
+            end
+        end)
+        return ping
+    end
+    
+    local fps = 0
+    local frameCount = 0
+    local lastTime = 0
+    
+    dragFrame.MouseEnter:Connect(function()
+        fpsLabel.TextStrokeTransparency = 0.4
+        pingLabel.TextStrokeTransparency = 0.4
+    end)
+    
+    dragFrame.MouseLeave:Connect(function()
+        if not dragging then
+            fpsLabel.TextStrokeTransparency = 0.7
+            pingLabel.TextStrokeTransparency = 0.7
+        end
+    end)
+    
+    renderSteppedConn = RunService.RenderStepped:Connect(function(deltaTime)
+        frameCount = frameCount + 1
+        
+        local currentTime = tick()
+        if currentTime - lastTime >= 0.5 then
+            fps = math.floor(frameCount / (currentTime - lastTime))
+            frameCount = 0
+            lastTime = currentTime
+            
+            local ping = getNetworkStats()
+            
+            local fpsColor = Color3.fromRGB(255, 255, 255)
+            local pingColor = Color3.fromRGB(255, 255, 255)
+            
+            if fps < 30 then
+                fpsColor = Color3.fromRGB(255, 50, 50)
+            elseif fps < 60 then
+                fpsColor = Color3.fromRGB(255, 200, 50)
+            else
+                fpsColor = Color3.fromRGB(50, 255, 50)
+            end
+            
+            if ping > 200 then
+                pingColor = Color3.fromRGB(255, 50, 50)
+            elseif ping > 100 then
+                pingColor = Color3.fromRGB(255, 200, 50)
+            else
+                pingColor = Color3.fromRGB(50, 255, 50)
+            end
+            
+            fpsLabel.Text = string.format("FPS: %d", fps)
+            fpsLabel.TextColor3 = fpsColor
+            
+            pingLabel.Text = string.format("Ping: %d", ping)
+            pingLabel.TextColor3 = pingColor
+        end
+    end)
+    
+    player.CharacterAdded:Connect(function()
+        if not screenGui.Parent then
+            screenGui.Parent = playerGui
+        end
+    end)
+    
+    dragFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton2 then
+            dragFrame.Position = UDim2.new(1, -130, 0, 10)
+        end
+    end)
+    
+    performanceStatsUI = screenGui
+    return screenGui
+end
+
+-- 主界面
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LoaderUI"
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 350) -- 高度增加以容纳更多选项
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BackgroundTransparency = 0.3
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "违 Hub"
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 22
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+TitleLabel.TextYAlignment = Enum.TextYAlignment.Center
+TitleLabel.Parent = MainFrame
+
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, -20, 0, 180)
+ScrollFrame.Position = UDim2.new(0, 10, 0, 60)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+ScrollFrame.CanvasSize = UDim2.new(1, 0, 0, 200)
+ScrollFrame.Parent = MainFrame
+
+local NoticeLabel = Instance.new("TextLabel")
+NoticeLabel.Size = UDim2.new(1, 0, 0, 200)
+NoticeLabel.BackgroundTransparency = 1
+NoticeLabel.Text = "欢迎使用违 Hub\n\n适配服务器: 自然灾害, 暴力区\n\n功能说明:\n• 自动欢迎特殊玩家\n• 实时性能监控\n• 游戏特定脚本\n\n我们会不断改进脚本,以便用户获得最佳体验"
+NoticeLabel.Font = Enum.Font.SourceSans
+NoticeLabel.TextSize = 16
+NoticeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoticeLabel.TextXAlignment = Enum.TextXAlignment.Center
+NoticeLabel.TextYAlignment = Enum.TextYAlignment.Top
+NoticeLabel.TextWrapped = true
+NoticeLabel.Parent = ScrollFrame
+
+-- 发送欢迎消息开关
+local WelcomeToggle = Instance.new("TextButton")
+WelcomeToggle.Size = UDim2.new(0, 20, 0, 20)
+WelcomeToggle.Position = UDim2.new(0.5, -110, 1, -115)
+WelcomeToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+WelcomeToggle.BackgroundTransparency = 0.3
+WelcomeToggle.Text = "√"
+WelcomeToggle.Font = Enum.Font.SourceSansBold
+WelcomeToggle.TextSize = 14
+WelcomeToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+WelcomeToggle.TextXAlignment = Enum.TextXAlignment.Center
+WelcomeToggle.TextYAlignment = Enum.TextYAlignment.Center
+WelcomeToggle.Parent = MainFrame
+
+local ToggleCorner1 = Instance.new("UICorner")
+ToggleCorner1.CornerRadius = UDim.new(0, 4)
+ToggleCorner1.Parent = WelcomeToggle
+
+local WelcomeLabel = Instance.new("TextLabel")
+WelcomeLabel.Size = UDim2.new(0, 180, 0, 20)
+WelcomeLabel.Position = UDim2.new(0.5, -90, 1, -115)
+WelcomeLabel.BackgroundTransparency = 1
+WelcomeLabel.Text = "启用玩家欢迎"
+WelcomeLabel.Font = Enum.Font.SourceSans
+WelcomeLabel.TextSize = 14
+WelcomeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+WelcomeLabel.TextXAlignment = Enum.TextXAlignment.Left
+WelcomeLabel.Parent = MainFrame
+
+WelcomeToggle.MouseButton1Click:Connect(function()
+    welcomeEnabled = not welcomeEnabled
+    WelcomeToggle.Text = welcomeEnabled and "√" or "×"
+    WelcomeToggle.BackgroundColor3 = welcomeEnabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(80, 20, 20)
+end)
+
+-- 发送进入消息开关
+local EnterToggle = Instance.new("TextButton")
+EnterToggle.Size = UDim2.new(0, 20, 0, 20)
+EnterToggle.Position = UDim2.new(0.5, -110, 1, -90)
+EnterToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+EnterToggle.BackgroundTransparency = 0.3
+EnterToggle.Text = "√"
+EnterToggle.Font = Enum.Font.SourceSansBold
+EnterToggle.TextSize = 14
+EnterToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+EnterToggle.TextXAlignment = Enum.TextXAlignment.Center
+EnterToggle.TextYAlignment = Enum.TextYAlignment.Center
+EnterToggle.Parent = MainFrame
+
+local ToggleCorner2 = Instance.new("UICorner")
+ToggleCorner2.CornerRadius = UDim.new(0, 4)
+ToggleCorner2.Parent = EnterToggle
+
+local EnterLabel = Instance.new("TextLabel")
+EnterLabel.Size = UDim2.new(0, 180, 0, 20)
+EnterLabel.Position = UDim2.new(0.5, -90, 1, -90)
+EnterLabel.BackgroundTransparency = 1
+EnterLabel.Text = "发送进入消息"
+EnterLabel.Font = Enum.Font.SourceSans
+EnterLabel.TextSize = 14
+EnterLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+EnterLabel.TextXAlignment = Enum.TextXAlignment.Left
+EnterLabel.Parent = MainFrame
+
+local enterMessageEnabled = true
+EnterToggle.MouseButton1Click:Connect(function()
+    enterMessageEnabled = not enterMessageEnabled
+    EnterToggle.Text = enterMessageEnabled and "√" or "×"
+    EnterToggle.BackgroundColor3 = enterMessageEnabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(80, 20, 20)
+end)
+
+-- 性能监控开关
+local PerformanceToggle = Instance.new("TextButton")
+PerformanceToggle.Size = UDim2.new(0, 20, 0, 20)
+PerformanceToggle.Position = UDim2.new(0.5, -110, 1, -65)
+PerformanceToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+PerformanceToggle.BackgroundTransparency = 0.3
+PerformanceToggle.Text = "√"
+PerformanceToggle.Font = Enum.Font.SourceSansBold
+PerformanceToggle.TextSize = 14
+PerformanceToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+PerformanceToggle.TextXAlignment = Enum.TextXAlignment.Center
+PerformanceToggle.TextYAlignment = Enum.TextYAlignment.Center
+PerformanceToggle.Parent = MainFrame
+
+local ToggleCorner3 = Instance.new("UICorner")
+ToggleCorner3.CornerRadius = UDim.new(0, 4)
+ToggleCorner3.Parent = PerformanceToggle
+
+local PerformanceLabel = Instance.new("TextLabel")
+PerformanceLabel.Size = UDim2.new(0, 180, 0, 20)
+PerformanceLabel.Position = UDim2.new(0.5, -90, 1, -65)
+PerformanceLabel.BackgroundTransparency = 1
+PerformanceLabel.Text = "显示性能监控"
+PerformanceLabel.Font = Enum.Font.SourceSans
+PerformanceLabel.TextSize = 14
+PerformanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+PerformanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+PerformanceLabel.Parent = MainFrame
+
+PerformanceToggle.MouseButton1Click:Connect(function()
+    if performanceStatsUI then
+        performanceStatsUI.Enabled = not performanceStatsUI.Enabled
+        PerformanceToggle.Text = performanceStatsUI.Enabled and "√" or "×"
+        PerformanceToggle.BackgroundColor3 = performanceStatsUI.Enabled and Color3.fromRGB(60, 60, 60) or Color3.fromRGB(80, 20, 20)
+    end
+end)
+
+local StartButton = Instance.new("TextButton")
+StartButton.Size = UDim2.new(0, 120, 0, 30)
+StartButton.Position = UDim2.new(0.5, -60, 1, -35)
+StartButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+StartButton.BackgroundTransparency = 0.3
+StartButton.Text = "开始使用"
+StartButton.Font = Enum.Font.SourceSansBold
+StartButton.TextSize = 18
+StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartButton.TextXAlignment = Enum.TextXAlignment.Center
+StartButton.TextYAlignment = Enum.TextYAlignment.Center
+StartButton.Parent = MainFrame
+
+local ButtonUICorner = Instance.new("UICorner")
+ButtonUICorner.CornerRadius = UDim.new(0, 8)
+ButtonUICorner.Parent = StartButton
+
+-- 主启动函数
+StartButton.MouseButton1Click:Connect(function()
+    -- 初始化欢迎系统
+    print("正在初始化欢迎系统...")
+    local welcomeLoaded = fetchPlayerRoles()
+    if welcomeLoaded then
+        print("玩家角色数据加载成功")
+    else
+        print("警告: 无法加载玩家角色数据")
+    end
+    
+    -- 为当前玩家发送欢迎消息
+    for _, player in ipairs(Players:GetPlayers()) do
+        sendWelcomeMessage(player)
+    end
+    
+    -- 监听新玩家加入
+    Players.PlayerAdded:Connect(function(player)
+        sendWelcomeMessage(player)
+    end)
+    
+    -- 定期更新角色数据
+    spawn(function()
+        while true do
+            wait(300)
+            fetchPlayerRoles()
+        end
+    end)
+    
+    -- 加载游戏特定脚本
+    local scripts = {
+        [189707] = "https://raw.githubusercontent.com/opaajhone-afk/roblox-vd/main/自然灾害.lua",
+        [93978595733734] = "https://raw.githubusercontent.com/opaajhone-afk/roblox-vd/main/暴力区.lua",
+    }
+
+    local gameId = game.PlaceId
+    if scripts[gameId] then
+        print("正在为游戏ID "..gameId.." 加载脚本...")
+        local success, content = pcall(function()
+            return game:HttpGet(scripts[gameId])
+        end)
+        if success and content then
+            local func = loadstring(content)
+            if func then
+                -- 关闭主界面
+                MainFrame:Destroy()
+                ScreenGui:Destroy()
+                
+                -- 执行游戏脚本
+                func()
+                print("脚本加载成功")
+                
+                -- 发送进入消息
+                if enterMessageEnabled then
+                    local chatSuccess = sendSpecifiedMessage("欢迎违 Hub使用者进入游戏")
+                    if chatSuccess then
+                        print("指定消息已发送")
+                    else
+                        print("消息发送失败")
+                    end
+                end
+            else
+                print("脚本解析失败")
+            end
+        else
+            print("脚本下载失败")
+        end
+    else
+        warn("未适配此游戏")
+        MainFrame:Destroy()
+        ScreenGui:Destroy()
+        LocalPlayer:Kick("未适配此游戏")
+    end
+    _G.loading = false
+end)
+
+-- 创建性能监控
+performanceStatsUI = createPerformanceStats()
