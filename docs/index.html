@@ -355,10 +355,32 @@
             padding-top: 2.5rem;
             border-top: 1px solid rgba(255,255,255,0.08);
             text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-            letter-spacing: 0.02em;
             transition: opacity 0.4s ease;
+        }
+        .contact-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .contact-btn {
+            padding: 0.8rem 1.8rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #999;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .contact-btn:hover {
+            border-color: rgba(255,255,255,0.3);
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
         }
         .back-to-top {
             position: fixed;
@@ -426,6 +448,11 @@
             .detail-title {
                 font-size: 1.5rem;
             }
+            .contact-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
             .back-to-top {
                 bottom: 20px;
                 right: 20px;
@@ -440,9 +467,9 @@
         <header class="header">
             <div class="logo" data-en="PROFILE" data-zh="个人主页">PROFILE</div>
             <nav class="nav">
-                <a class="nav-link" data-href="#home" data-en="HOME" data-zh="首页">HOME</a>
-                <a class="nav-link" data-href="#work" data-en="WORK" data-zh="作品">WORK</a>
-                <a class="nav-link" data-href="#contact" data-en="CONTACT" data-zh="联系">CONTACT</a>
+                <a class="nav-link" data-target="home" data-en="HOME" data-zh="首页">HOME</a>
+                <a class="nav-link" data-target="work" data-en="WORK" data-zh="作品">WORK</a>
+                <a class="nav-link" data-target="contact" data-en="CONTACT" data-zh="联系">CONTACT</a>
                 <button class="lang-switch" id="langSwitch">中文</button>
             </nav>
         </header>
@@ -455,7 +482,7 @@
             <div class="hero-text">
                 <h1 class="hero-title" data-en="I'M A <span>DEVELOPER</span>" data-zh="我是一名<span>开发者</span>">I'M A <span>DEVELOPER</span></h1>
                 <p class="hero-desc" data-en="Focus on efficient, concise code building to create an ultimate digital experience." data-zh="专注于高效、简洁的代码构建，打造极致的数字体验。">Focus on efficient, concise code building to create an ultimate digital experience.</p>
-                <button class="btn" data-href="#work" data-en="VIEW WORK" data-zh="查看作品">VIEW WORK</button>
+                <button class="btn view-work-btn" data-en="VIEW WORK" data-zh="查看作品">VIEW WORK</button>
             </div>
         </section>
 
@@ -479,7 +506,10 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
         </section>
 
         <footer class="footer" id="contact">
-            <p data-en="Welcome to my space." data-zh="欢迎你来到我的空间">&copy; 2025 PROFILE. ALL RIGHTS RESERVED.</p>
+            <div class="contact-buttons">
+                <a href="#" class="contact-btn" data-href="https://qun.qq.com/universal-share/share?ac=1&authKey=4ewoNRPSzUcylQhrRGmR3clP4yixLfrHdWCohiutJqMOlUZR2PYfFq8FdRkydiTr&busi_data=eyJncm91cENvZGUiOiI4OTE3MTY4MDgiLCJ0b2tlbiI6InR2a2xjUkV4MWZFa1pkRjI5bE8rNFJUNkRkWExsUndNWHh0MmhUb2pGcDl2czU2bVBpRkxyeG8rMDBLMkxlaW8iLCJ1aW4iOiIyMzc2OTY0Mjc2In0%3D&data=kTo8c_SxAErqlKNi5QMn3z29VUmcaO8ubMYyFaAsDYVNtblpqWwBqMCiu2BToAVVzeHowBNok1Vl6qrhrKfYmQ&svctype=4&tempid=h5_group_info" data-en="Join QQ Group" data-zh="加入QQ群">加入QQ群</a>
+                <a href="#" class="contact-btn" data-href="https://discord.gg/QQfa3EfZA" data-en="Join Discord Server" data-zh="加入Discord服务器">加入Discord服务器</a>
+            </div>
         </footer>
     </div>
 
@@ -504,12 +534,55 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
             }, animationSpeed);
         });
 
-        document.querySelectorAll('[data-href]').forEach(el => {
-            el.addEventListener('click', () => {
-                const target = el.getAttribute('data-href');
+        function smoothScrollTo(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                
+                link.style.opacity = '0.5';
                 setTimeout(() => {
-                    window.location.hash = target;
-                }, animationSpeed);
+                    link.style.opacity = '1';
+                }, 300);
+                
+                smoothScrollTo(targetId);
+            });
+        });
+
+        document.querySelector('.view-work-btn').addEventListener('click', () => {
+            smoothScrollTo('work');
+        });
+
+        
+        document.querySelectorAll('.contact-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = btn.getAttribute('data-href');
+                
+                
+                btn.style.opacity = '0.5';
+                btn.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    btn.style.opacity = '1';
+                    btn.style.transform = 'scale(1)';
+                    
+                    
+                    setTimeout(() => {
+                        if (href && href !== '#') {
+                            window.open(href, '_blank');
+                        }
+                    }, 200);
+                }, 300);
             });
         });
 
