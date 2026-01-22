@@ -251,6 +251,7 @@
             transition: all 0.4s ease;
             position: relative;
             pointer-events: none;
+            margin-bottom: 4rem;
         }
         .work-card .card-content {
             width: 100%;
@@ -285,6 +286,7 @@
             height: 0;
             overflow: hidden;
             transition: all 0.5s ease;
+            margin-bottom: 6rem;
         }
         .work-detail.show {
             opacity: 1;
@@ -446,6 +448,7 @@
             }
             .work-card {
                 aspect-ratio: 16/9;
+                margin-bottom: 3rem;
             }
             .work-card .card-content {
                 font-size: 1.5rem;
@@ -494,19 +497,34 @@
         <section id="work">
             <h2 class="section-title" data-en="MY WORK" data-zh="我的作品">MY WORK</h2>
             
-            <div class="work-card" id="projectCard">
+            <div class="work-card" id="projectCard1">
                 <div class="card-content" style="background-image: url('http://youke.xn--y7xa690gmna.cn/s1/2026/01/21/6970f2899a663.webp');"></div>
             </div>
             
-            <div class="work-detail" id="projectDetail">
+            <div class="work-detail" id="projectDetail1">
                 <h3 class="detail-title" data-en="Knob Farm" data-zh="旋钮农场">Knob Farm</h3>
                 <p class="detail-desc" data-en="This is a high-quality development project, focusing on efficient code structure and excellent user experience." data-zh="这是一个高质量的开发项目，专注于高效的代码结构与优秀的用户体验。">This is a high-quality development project, focusing on efficient code structure and excellent user experience.</p>
                 
-                <div class="content-box" id="copyContent">
+                <div class="content-box" id="copyContent1">
 loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/main/旋钮农场.lua"))()
                 </div>
                 
-                <button class="copy-btn" id="copyBtn" data-en="COPY CONTENT" data-zh="复制内容">COPY CONTENT</button>
+                <button class="copy-btn" id="copyBtn1" data-en="COPY CONTENT" data-zh="复制内容">COPY CONTENT</button>
+            </div>
+
+            <div class="work-card" id="projectCard2">
+                <div class="card-content" style="background-image: url('http://youke.xn--y7xa690gmna.cn/s1/2026/01/22/6971ed932cd40.webp');"></div>
+            </div>
+            
+            <div class="work-detail" id="projectDetail2">
+                <h3 class="detail-title" data-en="VD ESP" data-zh="暴力区">VD ESP</h3>
+                <p class="detail-desc" data-en="An intelligent auxiliary script with excellent performance optimization and humanized operation logic." data-zh="一款智能化辅助脚本，性能优化出色，操作逻辑人性化。">An intelligent auxiliary script with excellent performance optimization and humanized operation logic.</p>
+                
+                <div class="content-box" id="copyContent2">
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/main/暴力区.lua"))()
+                </div>
+                
+                <button class="copy-btn" id="copyBtn2" data-en="COPY CONTENT" data-zh="复制内容">COPY CONTENT</button>
             </div>
         </section>
 
@@ -567,12 +585,10 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
             smoothScrollTo('work');
         });
 
-        
         document.querySelectorAll('.contact-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const href = btn.getAttribute('data-href');
-                
                 
                 btn.style.opacity = '0.5';
                 btn.style.transform = 'scale(0.95)';
@@ -580,7 +596,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
                 setTimeout(() => {
                     btn.style.opacity = '1';
                     btn.style.transform = 'scale(1)';
-                    
                     
                     setTimeout(() => {
                         if (href && href !== '#') {
@@ -598,27 +613,51 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
             avatarImg.classList.add('loaded');
         };
 
-        const projectCard = document.getElementById('projectCard');
-        const projectDetail = document.getElementById('projectDetail');
-        projectCard.addEventListener('click', () => {
-            projectDetail.classList.toggle('show');
+        const projectCard1 = document.getElementById('projectCard1');
+        const projectDetail1 = document.getElementById('projectDetail1');
+        projectCard1.addEventListener('click', () => {
+            projectDetail1.classList.toggle('show');
         });
 
-        const copyBtn = document.getElementById('copyBtn');
-        const copyContent = document.getElementById('copyContent');
-        copyBtn.addEventListener('click', async () => {
+        const copyBtn1 = document.getElementById('copyBtn1');
+        const copyContent1 = document.getElementById('copyContent1');
+        copyBtn1.addEventListener('click', async () => {
             try {
-                await navigator.clipboard.writeText(copyContent.textContent.trim());
+                await navigator.clipboard.writeText(copyContent1.textContent.trim());
                 
-                copyBtn.textContent = isEnglish ? 'COPIED' : '已复制';
-                copyBtn.classList.add('copied');
+                copyBtn1.textContent = isEnglish ? 'COPIED' : '已复制';
+                copyBtn1.classList.add('copied');
                 
                 setTimeout(() => {
-                    copyBtn.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
-                    copyBtn.classList.remove('copied');
+                    copyBtn1.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                    copyBtn1.classList.remove('copied');
                 }, 2000);
             } catch (err) {
-                fallbackCopyText(copyContent.textContent.trim());
+                fallbackCopyText(copyContent1.textContent.trim());
+            }
+        });
+
+        const projectCard2 = document.getElementById('projectCard2');
+        const projectDetail2 = document.getElementById('projectDetail2');
+        projectCard2.addEventListener('click', () => {
+            projectDetail2.classList.toggle('show');
+        });
+
+        const copyBtn2 = document.getElementById('copyBtn2');
+        const copyContent2 = document.getElementById('copyContent2');
+        copyBtn2.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(copyContent2.textContent.trim());
+                
+                copyBtn2.textContent = isEnglish ? 'COPIED' : '已复制';
+                copyBtn2.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn2.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                    copyBtn2.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                fallbackCopyText(copyContent2.textContent.trim());
             }
         });
 
@@ -635,11 +674,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    copyBtn.textContent = isEnglish ? 'COPIED' : '已复制';
-                    copyBtn.classList.add('copied');
+                    copyBtn1.textContent = isEnglish ? 'COPIED' : '已复制';
+                    copyBtn1.classList.add('copied');
+                    copyBtn2.textContent = isEnglish ? 'COPIED' : '已复制';
+                    copyBtn2.classList.add('copied');
                     setTimeout(() => {
-                        copyBtn.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
-                        copyBtn.classList.remove('copied');
+                        copyBtn1.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                        copyBtn1.classList.remove('copied');
+                        copyBtn2.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                        copyBtn2.classList.remove('copied');
                     }, 2000);
                 } else {
                     alert(isEnglish ? 'Copy failed. Please select and copy manually.' : '复制失败，请手动选择并复制。');
