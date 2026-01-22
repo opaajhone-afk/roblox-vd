@@ -14,7 +14,7 @@
             outline: none;
         }
         body {
-            background: radial-gradient(circle at 20% 20%, #1a1a1a 0%, #0f0f0f 100%);
+            background: linear-gradient(135deg, #000000 0%, #333333 50%, #ffffff 100%);
             color: #e0e0e0;
             overflow-x: hidden;
             cursor: default;
@@ -31,9 +31,6 @@
             padding: 10vh 0;
             position: relative;
             z-index: 1;
-        }
-        .parallax {
-            transition: transform 0.1s ease-out;
         }
         .header {
             display: flex;
@@ -67,6 +64,7 @@
             transition: all 0.3s ease;
             position: relative;
             cursor: pointer;
+            animation: float 3s ease-in-out infinite;
         }
         .nav a::after {
             content: '';
@@ -95,6 +93,7 @@
             border-radius: 4px;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            animation: float 4s ease-in-out infinite;
         }
         .lang-switch:hover {
             border-color: rgba(255,255,255,0.3);
@@ -204,7 +203,7 @@
             cursor: pointer;
             display: inline-block;
             opacity: 0;
-            animation: fadeIn 1s ease forwards 3s;
+            animation: fadeIn 1s ease forwards 3s, float 5s ease-in-out infinite;
         }
         .btn::before {
             content: '';
@@ -339,6 +338,7 @@
             font-weight: 500;
             border-radius: 4px;
             transition: all 0.3s ease;
+            animation: float 6s ease-in-out infinite;
         }
         .copy-btn:hover {
             border-color: rgba(255,255,255,0.3);
@@ -375,6 +375,7 @@
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
+            animation: float 3.5s ease-in-out infinite;
         }
         .contact-btn:hover {
             border-color: rgba(255,255,255,0.3);
@@ -407,6 +408,10 @@
         .back-to-top:hover {
             background: rgba(255,255,255,0.2);
             border-color: rgba(255,255,255,0.3);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
         @media (max-width: 768px) {
             .container {
@@ -463,7 +468,7 @@
     </style>
 </head>
 <body>
-    <div class="container parallax">
+    <div class="container">
         <header class="header">
             <div class="logo" data-en="违" data-zh="个人主页">违</div>
             <nav class="nav">
@@ -480,7 +485,7 @@
                 <div class="avatar-name" data-en="sad" data-zh="违逆">sad</div>
             </div>
             <div class="hero-text">
-                <h1 class="hero-title" data-en="I'M A <span>DEVELOPER</span>" data-zh="我是一名<span>开发者</span>">I'M A <span>DEVELOPER</span></h1>
+                <h1 class="hero-title" data-en="Future <span>Coder</span>" data-zh="码<span>未来</span>">Future <span>Coder</span></h1>
                 <p class="hero-desc" data-en="Focus on efficient, concise code building to create an ultimate digital experience." data-zh="专注于高效、简洁的代码构建，打造极致的数字体验。">Focus on efficient, concise code building to create an ultimate digital experience.</p>
                 <button class="btn view-work-btn" data-en="VIEW WORK" data-zh="查看作品">VIEW WORK</button>
             </div>
@@ -507,8 +512,8 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
 
         <footer class="footer" id="contact">
             <div class="contact-buttons">
-                <a href="#" class="contact-btn" data-href="https://qun.qq.com/universal-share/share?ac=1&authKey=4ewoNRPSzUcylQhrRGmR3clP4yixLfrHdWCohiutJqMOlUZR2PYfFq8FdRkydiTr&busi_data=eyJncm91cENvZGUiOiI4OTE3MTY4MDgiLCJ0b2tlbiI6InR2a2xjUkV4MWZFa1pkRjI5bE8rNFJUNkRkWExsUndNWHh0MmhUb2pGcDl2czU2bVBpRkxyeG8rMDBLMkxlaW8iLCJ1aW4iOiIyMzc2OTY0Mjc2In0%3D&data=kTo8c_SxAErqlKNi5QMn3z29VUmcaO8ubMYyFaAsDYVNtblpqWwBqMCiu2BToAVVzeHowBNok1Vl6qrhrKfYmQ&svctype=4&tempid=h5_group_info" data-en="Join QQ Group" data-zh="加入QQ群">加入QQ群</a>
-                <a href="#" class="contact-btn" data-href="https://discord.gg/QQfa3EfZA" data-en="Join Discord Server" data-zh="加入Discord服务器">加入Discord服务器</a>
+                <a href="#" class="contact-btn" data-href="https://qun.qq.com/universal-share/share?ac=1&authKey=4ewoNRPSzUcylQhrRGmR3clP4yixLfrHdWCohiutJqMOlUZR2PYfFq8FdRkydiTr&busi_data=eyJncm91cENvZGUiOiI4OTE3MTY4MDgiLCJ0b2tlbiI6InR2a2xjUkV4MWZFa1pkRjI5bE8rNFJUNkRkWExsUndNWHh0MmhUb2pGcDl2czU2bVBpRkxyeG8rMDBLMkxlaW8iLCJ1aW4iOiIyMzc2OTY0Mjc2In0%3D&data=kTo8c_SxAErqlKNi5QMn3z29VUmcaO8ubMYyFaAsDYVNtblpqWwBqMCiu2BToAVVzeHowBNok1Vl6qrhrKfYmQ&svctype=4&tempid=h5_group_info" data-en="Join QQ Group" data-zh="加入QQ群">Join QQ Group</a>
+                <a href="#" class="contact-btn" data-href="https://discord.gg/QQfa3EfZA" data-en="Join Discord Server" data-zh="加入Discord服务器">Join Discord Server</a>
             </div>
         </footer>
     </div>
@@ -583,15 +588,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/refs/heads/
                         }
                     }, 200);
                 }, 300);
-            });
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            const parallaxElements = document.querySelectorAll('.parallax');
-            const x = e.clientX / window.innerWidth - 0.5;
-            const y = e.clientY / window.innerHeight - 0.5;
-            parallaxElements.forEach(el => {
-                el.style.transform = `translate(${x * 20}px, ${y * 20}px)`;
             });
         });
 
