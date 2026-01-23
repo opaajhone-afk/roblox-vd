@@ -526,6 +526,21 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/main/暴力
                 
                 <button class="copy-btn" id="copyBtn2" data-en="COPY CONTENT" data-zh="复制内容">COPY CONTENT</button>
             </div>
+
+            <div class="work-card" id="projectCard3">
+                <div class="card-content" style="background-image: url('http://youke.xn--y7xa690gmna.cn/s1/2026/01/23/697368a59405b.webp);"></div>
+            </div>
+            
+            <div class="work-detail" id="projectDetail3">
+                <h3 class="detail-title" data-en="Smash A Tower" data-zh="粉碎一座塔">Smash A Tower</h3>
+                <p class="detail-desc" data-en="A powerful tower destruction script with high efficiency and stable performance." data-zh="一款强大的塔楼破坏脚本，效率高，性能稳定。">A powerful tower destruction script with high efficiency and stable performance.</p>
+                
+                <div class="content-box" id="copyContent3">
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/main/粉碎一座塔.lua"))()
+                </div>
+                
+                <button class="copy-btn" id="copyBtn3" data-en="COPY CONTENT" data-zh="复制内容">COPY CONTENT</button>
+            </div>
         </section>
 
         <footer class="footer" id="contact">
@@ -661,6 +676,30 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/main/暴力
             }
         });
 
+        const projectCard3 = document.getElementById('projectCard3');
+        const projectDetail3 = document.getElementById('projectDetail3');
+        projectCard3.addEventListener('click', () => {
+            projectDetail3.classList.toggle('show');
+        });
+
+        const copyBtn3 = document.getElementById('copyBtn3');
+        const copyContent3 = document.getElementById('copyContent3');
+        copyBtn3.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(copyContent3.textContent.trim());
+                
+                copyBtn3.textContent = isEnglish ? 'COPIED' : '已复制';
+                copyBtn3.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn3.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                    copyBtn3.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                fallbackCopyText(copyContent3.textContent.trim());
+            }
+        });
+
         function fallbackCopyText(text) {
             const textArea = document.createElement('textarea');
             textArea.value = text;
@@ -678,11 +717,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/sttri/sad/main/暴力
                     copyBtn1.classList.add('copied');
                     copyBtn2.textContent = isEnglish ? 'COPIED' : '已复制';
                     copyBtn2.classList.add('copied');
+                    copyBtn3.textContent = isEnglish ? 'COPIED' : '已复制';
+                    copyBtn3.classList.add('copied');
                     setTimeout(() => {
                         copyBtn1.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
                         copyBtn1.classList.remove('copied');
                         copyBtn2.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
                         copyBtn2.classList.remove('copied');
+                        copyBtn3.textContent = isEnglish ? 'COPY CONTENT' : '复制内容';
+                        copyBtn3.classList.remove('copied');
                     }, 2000);
                 } else {
                     alert(isEnglish ? 'Copy failed. Please select and copy manually.' : '复制失败，请手动选择并复制。');
