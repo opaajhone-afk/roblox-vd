@@ -4,34 +4,81 @@ import fetch from "node-fetch";
 const app = express();
 app.use(express.json());
 
-app.post("/translate", async (req, res) => {
-  const texts = req.body.texts || [];
-  const result = {};
+/**
+ * 单条翻译
+ * GET /translate?q=Hello&from=en&to=zh
+ */
+app.get("/translate", async (req, res) => {
+  const { q, from = "en", to = "zh" } = req.query;
+  if (!q) return res.status(400).json({ error: "missing q" });
 
-  await Promise.all(
-    texts.map(async (text) => {
-      if (!text || text.length < 2) {
-        result[text] = text;
-        return;
-      }
+  try {
+    const url =
+      "https://api.mymemory.translated.net/get" +
+      `?q=${encodeURIComponent(q)}` +
+      `&langpair=${from}|${to}`;
 
-      try {
-        const url =
-          "https://api.mymemory.translated.net/get?q=" +
-          encodeURIComponent(text) +
-          "&langpair=en|zh";
+    const r = await fetch(url);
+    const j = await r.json();
 
-        const r = await fetch(url);
-        const j = await r.json();
-        result[text] =
-          j?.responseData?.translatedText || text;
-      } catch {
-        result[text] = text;
-      }
-    })
-  );
-
-  res.json(result);
+    res.json({
+      ok: true,
+      text: q,
+      result: j.responseData.translatedText
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
 });
 
-app.listen(process.env.PORT || 3000);
+/**
+ * 批量翻译（你要的）
+ * POST /translate/batch
+ * body:
+ * {
+ *   "texts": ["hello", "world"],
+ *   "from": "en",
+ *   "to": "zh"
+ * }
+ */
+app.post("/translate/batch", async (req, res) => {
+  const { texts, from = "en", to = "zh" } = req.body;
+
+  if (!Array.isArray(texts)) {
+    return res.status(400).json({ error: "texts must be array" });
+  }
+
+  try {
+    const results = [];
+
+    for (const text of texts) {
+      const url =
+        "https://api.mymemory.translated.net/get" +
+        `?q=${encodeURIComponent(text)}` +
+        `&langpair=${from}|${to}`;
+
+      const r = await fetch(url);
+      const j = await r.json();
+
+      results.push(j.responseData.translatedText);
+    }
+
+    res.json({
+      ok: true,
+      from,
+      to,
+      results
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("Translate API is running");
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server listening on", PORT);
+});
