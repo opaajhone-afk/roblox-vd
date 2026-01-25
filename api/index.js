@@ -4,13 +4,18 @@ import fetch from "node-fetch";
 const app = express();
 app.use(express.json());
 
-/**
- * 单条翻译
- * GET /translate?q=Hello&from=en&to=zh
- */
+// 根路径：用来测试服务是否在线
+app.get("/", (req, res) => {
+  res.send("Translate API is running");
+});
+
+// 单条翻译（可留可不用）
 app.get("/translate", async (req, res) => {
   const { q, from = "en", to = "zh" } = req.query;
-  if (!q) return res.status(400).json({ error: "missing q" });
+
+  if (!q) {
+    return res.status(400).json({ error: "missing q" });
+  }
 
   try {
     const url =
@@ -23,35 +28,31 @@ app.get("/translate", async (req, res) => {
 
     res.json({
       ok: true,
-      text: q,
-      result: j.responseData.translatedText
+      original: q,
+      translated: j.responseData?.translatedText || q
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
 
-/**
- * 批量翻译（你要的）
- * POST /translate/batch
- * body:
- * {
- *   "texts": ["hello", "world"],
- *   "from": "en",
- *   "to": "zh"
- * }
- */
+// 🔥 批量翻译（你要的重点）
 app.post("/translate/batch", async (req, res) => {
   const { texts, from = "en", to = "zh" } = req.body;
 
   if (!Array.isArray(texts)) {
-    return res.status(400).json({ error: "texts must be array" });
+    return res.status(400).json({ error: "texts must be an array" });
   }
 
   try {
     const results = [];
 
     for (const text of texts) {
+      if (!text || text.length < 1) {
+        results.push(text);
+        continue;
+      }
+
       const url =
         "https://api.mymemory.translated.net/get" +
         `?q=${encodeURIComponent(text)}` +
@@ -60,7 +61,7 @@ app.post("/translate/batch", async (req, res) => {
       const r = await fetch(url);
       const j = await r.json();
 
-      results.push(j.responseData.translatedText);
+      results.push(j.responseData?.translatedText || text);
     }
 
     res.json({
@@ -74,11 +75,8 @@ app.post("/translate/batch", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Translate API is running");
-});
-
+// Railway 必须监听这个端口
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server listening on", PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Translate API listening on port", PORT);
 });
